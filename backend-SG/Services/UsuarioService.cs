@@ -1,5 +1,6 @@
 ﻿using backend_SG.Data;
 using backend_SG.DTOs;
+using backend_SG.Extensions;
 using backend_SG.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,14 @@ namespace backend_SG.Services
 
             if (usuarioExiste) return null;
 
+            if (!dto.Nome.IsNomeValido() ||
+                !dto.Email.IsEmailValido() ||
+                !dto.Cpf.IsCpfValido() ||
+                !dto.Senha.IsSenhaValida())
+            {
+                return null;
+            }
+
             var novoUsuario = new Usuario
             {
                 Id = Guid.NewGuid(),
@@ -53,7 +62,13 @@ namespace backend_SG.Services
         public async Task<Usuario?> Autenticar(string email, string senhaLimpa)
         {
             var usuario = await _dbContext.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
-            if (usuario == null) return null;
+            if (usuario == null) 
+                return null;
+
+            if (!senhaLimpa.IsSenhaValida())
+            {
+                return null;
+            }
 
             var resultado = _passwordHasher.VerifyHashedPassword(usuario, usuario.SenhaHash, senhaLimpa);
 

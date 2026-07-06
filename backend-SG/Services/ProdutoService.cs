@@ -14,15 +14,13 @@ namespace backend_SG.Services
             _dbContext = dbContext;
         }
 
-        // 1. LISTAR TODOS
         public async Task<List<Produto>> ListarTodos()
         {
             return await _dbContext.Produtos
-                .Include(p => p.TipoProduto) // Traz junto o nome do tipo do produto (JOIN)
+                .Include(p => p.TipoProduto)
                 .ToListAsync();
         }
 
-        // 2. BUSCAR POR ID
         public async Task<Produto?> BuscarPorId(Guid id)
         {
             return await _dbContext.Produtos
@@ -30,13 +28,11 @@ namespace backend_SG.Services
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        // 3. ATUALIZAR PRODUTO Existente
         public async Task<bool> AtualizarProduto(Guid id, EditarProdutoDTO dto)
         {
             var produto = await _dbContext.Produtos.FindAsync(id);
             if (produto == null) return false;
 
-            // Atualiza os campos com os novos dados vindos da tela
             produto.Nome = dto.Nome;
             produto.PrecoCusto = dto.PrecoCusto;
             produto.PrecoVenda = dto.PrecoVenda;
@@ -47,17 +43,14 @@ namespace backend_SG.Services
             return true;
         }
 
-        // 4. DELETAR PRODUTO (Com trava de segurança!)
         public async Task<bool> DeletarProduto(Guid id)
         {
             var produto = await _dbContext.Produtos.FindAsync(id);
             if (produto == null) return false;
 
-            // REGRA DE OURO: Verifica se o produto já tem movimentações de estoque vinculadas
             bool temMovimentacao = await _dbContext.MovimentacoesEstoque.AnyAsync(m => m.ProdutoId == id);
             if (temMovimentacao)
             {
-                // Se já tem histórico no estoque, não podemos deletar para não quebrar os relatórios antigos!
                 return false;
             }
 
@@ -66,7 +59,6 @@ namespace backend_SG.Services
             return true;
         }
 
-        // A sua validação antiga 'ValidarSaidaEstoque' continua aqui embaixo...
         public async Task<bool> ValidarSaidaEstoque(Guid produtoId, int quantidadeNecessaria)
         {
             var entradas = await _dbContext.MovimentacoesEstoque

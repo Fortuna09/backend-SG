@@ -1,5 +1,4 @@
 using backend_SG.Data;
-using backend_SG.Data;
 using backend_SG.Services;
 using Microsoft.EntityFrameworkCore;
 

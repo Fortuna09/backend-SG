@@ -1,5 +1,6 @@
 ﻿using backend_SG.Data;
 using backend_SG.DTOs;
+using backend_SG.Extensions;
 using backend_SG.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +30,14 @@ namespace backend_SG.Services
             var cnpjExiste = await _dbContext.Fornecedores.AnyAsync(f => f.Cnpj == dto.Cnpj);
             if (cnpjExiste) return null;
 
-            var novoFornecedor = new Fornecedor
+            if(!dto.Cnpj.IsCnpjValido() ||
+               !dto.EmailCorporativo.IsEmailValido() ||
+               !dto.Telefone.IsTelefoneValido())
+            {
+                return null;
+            }
+
+                var novoFornecedor = new Fornecedor
             {
                 Id = Guid.NewGuid(),
                 RazaoSocial = dto.RazaoSocial,
