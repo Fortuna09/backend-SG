@@ -68,15 +68,46 @@ namespace backend_SG.Controllers
             var novoProduto = new Produto
             {
                 Id = Guid.NewGuid(),
-                Nome = dto.Nome,    
+                Nome = dto.Nome,
                 CodigoDeBarras = dto.CodigoDeBarras,
                 PrecoCusto = dto.PrecoCusto,
                 PrecoVenda = dto.PrecoVenda ?? 0,
                 TipoProdutoId = dto.TipoProdutoId
             };
+
             await _dbContext.Produtos.AddAsync(novoProduto);
             await _dbContext.SaveChangesAsync();
+
             return CreatedAtAction(nameof(BuscarPorId), new { id = novoProduto.Id }, novoProduto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Atualizar(Guid id, [FromBody] EditarProdutoDTO dto)
+        {
+            bool atualizou = await _produtoService.AtualizarProduto(id, dto);
+
+            if (!atualizou)
+            {
+                return NotFound("Produto não encontrado para atualização.");
+            }
+
+            return Ok("Produto atualizado com sucesso!");
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Deletar(Guid id)
+        {
+            bool deletou = await _produtoService.DeletarProduto(id);
+
+            if (!deletou)
+            {
+                var produtoExiste = await _dbContext.Produtos.AnyAsync(p => p.Id == id);
+                if (!produtoExiste) return NotFound("Produto não encontrado.");
+
+                return BadRequest("Não é possível deletar este produto porque ele já possui histórico de movimentações no estoque.");
+            }
+
+            return Ok("Produto removido com sucesso!");
         }
     }
 }

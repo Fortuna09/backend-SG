@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_SG.Data;
 
@@ -11,9 +12,11 @@ using backend_SG.Data;
 namespace backend_SG.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703165802_AdicionadoUsuariosEFornecedores")]
+    partial class AdicionadoUsuariosEFornecedores
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,9 +66,6 @@ namespace backend_SG.Migrations
                     b.Property<DateTime>("DataMovimentacao")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("FornecedorId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("ProdutoId")
                         .HasColumnType("uniqueidentifier");
 
@@ -76,8 +76,6 @@ namespace backend_SG.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FornecedorId");
 
                     b.HasIndex("ProdutoId");
 
@@ -206,19 +204,11 @@ namespace backend_SG.Migrations
 
             modelBuilder.Entity("backend_SG.Models.MovimentacaoEstoque", b =>
                 {
-                    b.HasOne("backend_SG.Models.Fornecedor", "Fornecedor")
-                        .WithMany()
-                        .HasForeignKey("FornecedorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("backend_SG.Models.Produto", "Produto")
                         .WithMany()
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Fornecedor");
 
                     b.Navigation("Produto");
                 });

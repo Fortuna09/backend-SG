@@ -18,8 +18,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
-//Service de produto
+// ============ SERVICES ============
 builder.Services.AddScoped<ProdutoService>();
+builder.Services.AddScoped<PedidoService>();
+builder.Services.AddScoped<FornecedorService>();
+builder.Services.AddScoped<UsuarioService>();
 
 var app = builder.Build();  
 

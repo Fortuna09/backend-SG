@@ -1,5 +1,6 @@
 ﻿using backend_SG.Data;
-using backend_SG.Enums;
+using backend_SG.DTOs;
+using backend_SG.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend_SG.Services
@@ -7,35 +8,89 @@ namespace backend_SG.Services
     public class ProdutoService
     {
         private readonly AppDbContext _dbContext;
-        private readonly ProdutoService _produtoService;
 
         public ProdutoService(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public async Task<int> CalculoSaldoAtual(Guid produtoId)
+        // 1. LISTAR TODOS
+        public async Task<List<Produto>> ListarTodos()
         {
-            var movimentacao = await _dbContext.MovimentacaoEstoque
-                .Where(m => m.ProdutoId == produtoId)
-                .OrderByDescending(m => m.DataMovimentacao)
+            return await _dbContext.Produtos
+                .Include(p => p.TipoProduto) // Traz junto o nome do tipo do produto (JOIN)
                 .ToListAsync();
+        }
 
-            int saldoTotal = 0;
+        // 2. BUSCAR POR ID
+        public async Task<Produto?> BuscarPorId(Guid id)
+        {
+            return await _dbContext.Produtos
+                .Include(p => p.TipoProduto)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
 
-            foreach (var mov in movimentacao)
+        // 3. ATUALIZAR PRODUTO Existente
+        public async Task<bool> AtualizarProduto(Guid id, EditarProdutoDTO dto)
+        {
+            var produto = await _dbContext.Produtos.FindAsync(id);
+            if (produto == null) return false;
+
+            // Atualiza os campos com os novos dados vindos da tela
+            produto.Nome = dto.Nome;
+            produto.PrecoCusto = dto.PrecoCusto;
+            produto.PrecoVenda = dto.PrecoVenda;
+            produto.CodigoDeBarras = dto.CodigoDeBarras;
+            produto.TipoProdutoId = dto.TipoProdutoId;
+
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        // 4. DELETAR PRODUTO (Com trava de segurança!)
+        public async Task<bool> DeletarProduto(Guid id)
+        {
+            var produto = await _dbContext.Produtos.FindAsync(id);
+            if (produto == null) return false;
+
+            // REGRA DE OURO: Verifica se o produto já tem movimentações de estoque vinculadas
+            bool temMovimentacao = await _dbContext.MovimentacoesEstoque.AnyAsync(m => m.ProdutoId == id);
+            if (temMovimentacao)
             {
-                if (mov.TipoMovimentacao == TipoMovimentacao.Entrada)
-                {
-                    saldoTotal += mov.Quantidade;
-                }
-                else if (mov.TipoMovimentacao == TipoMovimentacao.Saida)
-                {
-                    saldoTotal -= mov.Quantidade;
-                }
+                // Se já tem histórico no estoque, não podemos deletar para não quebrar os relatórios antigos!
+                return false;
             }
 
-            return saldoTotal;
+            _dbContext.Produtos.Remove(produto);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        // A sua validação antiga 'ValidarSaidaEstoque' continua aqui embaixo...
+        public async Task<bool> ValidarSaidaEstoque(Guid produtoId, int quantidadeNecessaria)
+        {
+            var entradas = await _dbContext.MovimentacoesEstoque
+                .Where(m => m.ProdutoId == produtoId && m.TipoMovimentacao == Enums.TipoMovimentacao.Entrada)
+                .SumAsync(m => m.Quantidade);
+
+            var saidas = await _dbContext.MovimentacoesEstoque
+                .Where(m => m.ProdutoId == produtoId && m.TipoMovimentacao == Enums.TipoMovimentacao.Saida)
+                .SumAsync(m => m.Quantidade);
+
+            return (entradas - saidas) >= quantidadeNecessaria;
+        }
+
+        public async Task<int> CalculoSaldoAtual(Guid produtoId)
+        {
+            var entradas = await _dbContext.MovimentacoesEstoque
+                .Where(m => m.ProdutoId == produtoId && m.TipoMovimentacao == Enums.TipoMovimentacao.Entrada)
+                .SumAsync(m => m.Quantidade);
+
+            var saidas = await _dbContext.MovimentacoesEstoque
+                .Where(m => m.ProdutoId == produtoId && m.TipoMovimentacao == Enums.TipoMovimentacao.Saida)
+                .SumAsync(m => m.Quantidade);
+
+            return entradas - saidas;
         }
     }
 }

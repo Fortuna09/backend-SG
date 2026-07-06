@@ -1,6 +1,8 @@
 ﻿using backend_SG.Data;
 using backend_SG.DTOs;
+using backend_SG.Enums;
 using backend_SG.Models;
+using backend_SG.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend_SG.Controllers
@@ -10,27 +12,37 @@ namespace backend_SG.Controllers
     public class MovimentacaoEstoqueController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
+        private readonly ProdutoService _produtoService;
 
-        public MovimentacaoEstoqueController(AppDbContext dbContext)
+        public MovimentacaoEstoqueController(AppDbContext dbContext, ProdutoService produtoService)
         {
             _dbContext = dbContext;
+            _produtoService = produtoService;
         }
 
         [HttpPost]
         public async Task<IActionResult> CriarMovimentacao([FromBody] CriarMovimentacaoDTO dto)
         {
-            // 1. Mapeia o DTO para a Entidade do Banco
+            if(dto.TipoMovimentacao == TipoMovimentacao.Saida)
+            {
+                bool podeSair = await _produtoService.ValidarSaidaEstoque(dto.ProdutoId, dto.Quantidade);
+
+                if (!podeSair)
+                {
+                    return BadRequest("Quantidade insuficiente em estoque para a saída.");
+                }
+            }
+
             var novaMovimentacao = new MovimentacaoEstoque
             {
                 Id = Guid.NewGuid(),
                 ProdutoId = dto.ProdutoId,
                 Quantidade = dto.Quantidade,
                 TipoMovimentacao = dto.TipoMovimentacao,
-                DataMovimentacao = DateTime.UtcNow // Carimbo de data seguro feito no servidor
+                DataMovimentacao = DateTime.UtcNow
             };
 
-            // 2. Adiciona e salva no banco de dados
-            await _dbContext.MovimentacaoEstoque.AddAsync(novaMovimentacao);
+            await _dbContext.MovimentacoesEstoque.AddAsync(novaMovimentacao);
             await _dbContext.SaveChangesAsync();
 
             return Ok(novaMovimentacao);

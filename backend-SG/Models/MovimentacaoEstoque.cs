@@ -10,5 +10,7 @@ namespace backend_SG.Models
         public int Quantidade { get; set; }
         public DateTime DataMovimentacao { get; set; }
         public TipoMovimentacao TipoMovimentacao { get; set; }
+        public Guid FornecedorId { get; set; }
+        public Fornecedor? Fornecedor { get; set; }
     }
 }
