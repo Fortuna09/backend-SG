@@ -4,12 +4,14 @@ using backend_SG.DTOs;
 using backend_SG.Enums;
 using backend_SG.Models;
 using backend_SG.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend_SG.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PedidoController : ControllerBase
     {
         private readonly AppDbContext _dbContext;

@@ -1,13 +1,15 @@
-﻿using backend_SG.DTOs;
+﻿using backend_SG.Data;
+using backend_SG.DTOs;
 using backend_SG.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using backend_SG.Data;
 
 namespace backend_SG.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class FornecedorController : ControllerBase
     {
         private readonly FornecedorService _fornecedorService;
